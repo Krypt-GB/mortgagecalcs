@@ -1,148 +1,227 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SDLT & Mortgage Calculator</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 400px;
-            margin: 20px auto;
-            padding: 20px;
-            border: 1px solid #ccc;
-            border-radius: 10px;
-            box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-        input, button {
-            padding: 10px;
-            margin: 5px 0;
-            width: calc(100% - 22px);
-            box-sizing: border-box;
-        }
-        button {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        h3 {
-            margin-top: 10px;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SDLT & Mortgage Calculator</title>
+
+<style>
+body {
+font-family: Arial, sans-serif;
+max-width: 420px;
+margin: 20px auto;
+padding: 20px;
+border: 1px solid #ccc;
+border-radius: 10px;
+box-shadow: 2px 2px 12px rgba(0,0,0,0.1);
+text-align: center;
+}
+
+input, button {
+padding: 10px;
+margin: 6px 0;
+width: calc(100% - 22px);
+box-sizing: border-box;
+}
+
+button {
+background-color: #007bff;
+color: white;
+border: none;
+cursor: pointer;
+}
+
+button:hover {
+background-color: #0056b3;
+}
+
+h3 {
+margin-top: 10px;
+}
+
+.slider-container {
+display:flex;
+gap:10px;
+align-items:center;
+}
+
+.slider-container input[type="range"]{
+flex:1;
+}
+</style>
 </head>
+
 <body>
 
-    <h2>Stamp Duty & Mortgage Calculator</h2>
+<h2>Stamp Duty Calculator</h2>
 
-    <label for="propertyPrice">Enter Property Price (£):</label>
-    <input type="number" id="propertyPrice" placeholder="Enter amount..." required>
+<label for="propertyPrice">Property Price (£)</label>
+<input type="number" id="propertyPrice" placeholder="Enter property price">
 
-    <button onclick="calculateSDLT()">Calculate SDLT</button>
-    <h3 id="result">Stamp Duty: £0.00</h3>
+<button onclick="calculateSDLT()">Calculate SDLT</button>
 
-    <hr>
+<h3 id="result">Stamp Duty: £0.00</h3>
 
-    <h2>Mortgage Repayment Calculator</h2>
+<hr>
 
-    <label for="propertyValue">Property Value (£):</label>
-    <input type="number" id="propertyValue" placeholder="Enter property value">
+<h2>Mortgage Calculator</h2>
 
-    <label for="loanAmount">Loan Amount (£):</label>
-    <input type="number" id="loanAmount" placeholder="Enter loan amount">
+<label for="propertyValue">Property Value (£)</label>
+<input type="number" id="propertyValue" placeholder="Enter property value" oninput="updateDeposit(); calculateMortgage();">
 
-    <label for="termYears">Term (years):</label>
-    <input type="number" id="termYears" placeholder="Enter loan term (years)">
+<label for="loanAmount">Loan Amount (£)</label>
+<input type="number" id="loanAmount" placeholder="Enter loan amount" oninput="updateDeposit(); calculateMortgage();">
 
-    <label for="interestRate">Interest Rate (%):</label>
-    <input type="number" id="interestRate" placeholder="Enter interest rate">
+<h3 id="depositAmount">Deposit: £0</h3>
 
-    <button onclick="calculateMortgage()">Calculate Mortgage</button>
+<label for="termYears">Term (years)</label>
+<input type="number" id="termYears" placeholder="Loan term" oninput="calculateMortgage()">
 
-    <h3 id="monthlyPayment">Monthly Repayment: £0.00</h3>
-    <h3 id="ltvRatio">LTV Ratio: 0%</h3>
-    <p id="rateVariations"></p>
+<label for="interestRate">Interest Rate (%)</label>
 
-    <script>
-        function calculateSDLT() {
-            let price = parseFloat(document.getElementById("propertyPrice").value);
+<div class="slider-container">
+<input type="range" id="rateSlider" min="0" max="10" step="0.1" value="5"
+oninput="syncRateInput(); calculateMortgage();">
 
-            if (isNaN(price) || price < 0) {
-                alert("Please enter a valid property price.");
-                return;
-            }
+<input type="number" id="interestRate" value="5" step="0.1"
+oninput="syncSlider(); calculateMortgage();">
+</div>
 
-            let rates = [
-                [125000, 0], 
-                [250000, 0.02], 
-                [925000, 0.05], 
-                [1500000, 0.10], 
-                [Infinity, 0.12]
-            ];
+<button onclick="calculateMortgage()">Calculate Mortgage</button>
 
-            let sdlTax = 0;
-            let previousLimit = 0;
+<h3 id="monthlyPayment">Monthly Repayment: £0.00</h3>
+<h3 id="ltvRatio">LTV Ratio: 0%</h3>
 
-            for (let i = 0; i < rates.length; i++) {
-                let [limit, rate] = rates[i];
-                if (price > previousLimit) {
-                    let taxableAmount = Math.min(price, limit) - previousLimit;
-                    sdlTax += taxableAmount * rate;
-                    previousLimit = limit;
-                } else {
-                    break;
-                }
-            }
+<p id="rateVariations"></p>
 
-            document.getElementById("result").textContent = `Stamp Duty: £${sdlTax.toFixed(2)}`;
-        }
+<script>
 
-        function calculateMortgage() {
-            let propertyValue = parseFloat(document.getElementById("propertyValue").value);
-            let loanAmount = parseFloat(document.getElementById("loanAmount").value);
-            let termYears = parseFloat(document.getElementById("termYears").value);
-            let baseRate = parseFloat(document.getElementById("interestRate").value);
+function formatGBP(value){
+return new Intl.NumberFormat('en-GB',{
+style:'currency',
+currency:'GBP'
+}).format(value);
+}
 
-            if (isNaN(propertyValue) || isNaN(loanAmount) || isNaN(termYears) || isNaN(baseRate) ||
-                propertyValue <= 0 || loanAmount <= 0 || termYears <= 0 || baseRate < 0) {
-                alert("Please enter valid mortgage details.");
-                return;
-            }
+function calculateSDLT(){
 
-            let ltv = (loanAmount / propertyValue) * 100;
+let price=parseFloat(document.getElementById("propertyPrice").value);
 
-            function calculateMonthlyPayment(rate) {
-                let monthlyInterestRate = (rate / 100) / 12;
-                let numberOfPayments = termYears * 12;
-                if (monthlyInterestRate > 0) {
-                    let factor = Math.pow(1 + monthlyInterestRate, numberOfPayments);
-                    return loanAmount * (monthlyInterestRate * factor) / (factor - 1);
-                } else {
-                    return loanAmount / numberOfPayments;
-                }
-            }
+if(isNaN(price)||price<0){
+alert("Please enter a valid property price.");
+return;
+}
 
-            let baseMonthlyPayment = calculateMonthlyPayment(baseRate);
+let rates=[
+[125000,0],
+[250000,0.02],
+[925000,0.05],
+[1500000,0.10],
+[Infinity,0.12]
+];
 
-            let rateIncreases = [1, 3, 5, 7];
-            let repaymentList = `Projected Monthly Repayments:<br>
-                                 Starting Rate (${baseRate}%): £${baseMonthlyPayment.toFixed(2)}<br>`;
+let tax=0;
+let prev=0;
 
-            rateIncreases.forEach(increase => {
-                let newRate = baseRate + increase;
-                let newPayment = calculateMonthlyPayment(newRate);
-                repaymentList += `${increase}% increase (${newRate.toFixed(1)}%): £${newPayment.toFixed(2)}<br>`;
-            });
+for(let i=0;i<rates.length;i++){
 
-            document.getElementById("monthlyPayment").innerHTML = `Monthly Repayment: £${baseMonthlyPayment.toFixed(2)}`;
-            document.getElementById("ltvRatio").textContent = `LTV Ratio: ${ltv.toFixed(2)}%`;
-            document.getElementById("rateVariations").innerHTML = repaymentList;
-        }
-    </script>
+let limit=rates[i][0];
+let rate=rates[i][1];
+
+if(price>prev){
+
+let taxable=Math.min(price,limit)-prev;
+tax+=taxable*rate;
+prev=limit;
+
+}else{
+break;
+}
+
+}
+
+document.getElementById("result").textContent="Stamp Duty: "+formatGBP(tax);
+
+}
+
+function updateDeposit(){
+
+let property=parseFloat(document.getElementById("propertyValue").value);
+let loan=parseFloat(document.getElementById("loanAmount").value);
+
+if(!isNaN(property)&&!isNaN(loan)){
+
+let deposit=property-loan;
+
+if(deposit>=0){
+document.getElementById("depositAmount").textContent="Deposit: "+formatGBP(deposit);
+}
+
+}
+
+}
+
+function syncRateInput(){
+document.getElementById("interestRate").value=document.getElementById("rateSlider").value;
+}
+
+function syncSlider(){
+document.getElementById("rateSlider").value=document.getElementById("interestRate").value;
+}
+
+function calculateMortgage(){
+
+let propertyValue=parseFloat(document.getElementById("propertyValue").value);
+let loanAmount=parseFloat(document.getElementById("loanAmount").value);
+let termYears=parseFloat(document.getElementById("termYears").value);
+let baseRate=parseFloat(document.getElementById("interestRate").value);
+
+if(isNaN(propertyValue)||isNaN(loanAmount)||isNaN(termYears)||isNaN(baseRate)||
+propertyValue<=0||loanAmount<=0||termYears<=0||baseRate<0){
+return;
+}
+
+let ltv=(loanAmount/propertyValue)*100;
+
+function monthly(rate){
+
+let r=(rate/100)/12;
+let n=termYears*12;
+
+if(r>0){
+
+let factor=Math.pow(1+r,n);
+return loanAmount*(r*factor)/(factor-1);
+
+}else{
+return loanAmount/n;
+}
+
+}
+
+let basePayment=monthly(baseRate);
+
+let increases=[1,3,5,7];
+
+let text="Projected Monthly Repayments:<br>";
+text+="Starting Rate ("+baseRate+"%): "+formatGBP(basePayment)+"<br>";
+
+increases.forEach(function(inc){
+
+let newRate=baseRate+inc;
+let payment=monthly(newRate);
+
+text+=inc+"% increase ("+newRate.toFixed(1)+"%): "+formatGBP(payment)+"<br>";
+
+});
+
+document.getElementById("monthlyPayment").textContent="Monthly Repayment: "+formatGBP(basePayment);
+document.getElementById("ltvRatio").textContent="LTV Ratio: "+ltv.toFixed(2)+"%";
+document.getElementById("rateVariations").innerHTML=text;
+
+}
+
+</script>
 
 </body>
 </html>
