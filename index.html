@@ -42,14 +42,6 @@
     <label for="propertyPrice">Enter Property Price (£):</label>
     <input type="number" id="propertyPrice" placeholder="Enter amount..." required>
 
-    <div>
-        <input type="radio" id="currentRates" name="sdltRates" value="current" checked>
-        <label for="currentRates">Current Rates</label>
-
-        <input type="radio" id="april2025Rates" name="sdltRates" value="april2025">
-        <label for="april2025Rates">April 2025 Rates</label>
-    </div>
-
     <button onclick="calculateSDLT()">Calculate SDLT</button>
     <h3 id="result">Stamp Duty: £0.00</h3>
 
@@ -78,19 +70,13 @@
     <script>
         function calculateSDLT() {
             let price = parseFloat(document.getElementById("propertyPrice").value);
-            let selectedRate = document.querySelector('input[name="sdltRates"]:checked').value;
 
             if (isNaN(price) || price < 0) {
                 alert("Please enter a valid property price.");
                 return;
             }
 
-            let rates = selectedRate === "current" ? [
-                [250000, 0], 
-                [925000, 0.05], 
-                [1500000, 0.10], 
-                [Infinity, 0.12]
-            ] : [
+            let rates = [
                 [125000, 0], 
                 [250000, 0.02], 
                 [925000, 0.05], 
